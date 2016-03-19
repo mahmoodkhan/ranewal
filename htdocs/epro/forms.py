@@ -190,8 +190,8 @@ class FinanceCodesForm(forms.ModelForm):
         except Exception as e:
             raise ValidationError(_("GL Account must be a five digits number"))
 
-        if gl_account_length > 5 or gl_account_length < 5:
-            raise ValidationError(_("GL Account must be a five digits number"))
+        if gl_account_length > 4 or gl_account_length < 4:
+            raise ValidationError(_("GL Account must be a four digits number"))
         return gl_account
 
     def clean_allocation_percent(self):
@@ -209,7 +209,7 @@ class FinanceCodesForm(forms.ModelForm):
             raise ValidationError(_("Allocation_percent is required."))
 
         total = item.finance_codes.aggregate(Sum('allocation_percent'))
-        if total['allocation_percent__sum']:
+        if not self.pk and total['allocation_percent__sum']:
             if ( float(total['allocation_percent__sum']) + allocation_percent) > 100:
                 raise ValidationError(_("Allocations cannot be more than 100%"))
         else:

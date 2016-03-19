@@ -1,11 +1,13 @@
 {% load crispy_forms_tags %}
-
+<!--
 <div class="modal-header" style="padding: 5px;">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
     {% comment %} <h4 class="modal-title">{% if item.pk %} Updating Item {% else %} Adding Item {% endif %}</h4> {% endcomment %}
     <span id="modal_messages"></span>
 </div>
+-->
 <div class="modal-body" style="padding: 0px 2px 0px 2px;" >
+    <button type="button" class="close" style="padding:5px;" data-dismiss="modal" aria-hidden="true">&times;</button>
     <!-- Nav tabs -->
     <ul id="pr_items_tabs_ul" class="nav nav-tabs" role="tablist">
         <li role="presentation" class="active">
@@ -155,8 +157,8 @@
         var tds = $(this).closest("tr").children();      
         $("#id_gl_account").val(parseInt($(tds[2]).text()));
         $("#id_fund_code").select2({ placeholder: 'Fund Code', allowClear: true, }).val( parseInt($(tds[3]).text()) ).trigger("change");
-        $("#id_dept_code").select2().val( parseInt($(tds[5]).text()) ).trigger("change");
-        $("#id_office_code").select2().val( parseInt($(tds[7]).text()) ).trigger("change");
+        $("#id_dept_code").select2({ placeholder: 'Dept Code', allowClear: true, }).val( parseInt($(tds[5]).text()) ).trigger("change");
+        $("#id_office_code").select2({ placeholder: 'Office Code', allowClear: true, }).val( parseInt($(tds[7]).text()) ).trigger("change");
         $("#id_lin_code").val( $.trim($(tds[9]).text()) );
         $("#id_activity_code").val( $.trim($(tds[10]).text()) );
         $("#id_employee_id").val( parseInt($.trim($(tds[11]).text())) );

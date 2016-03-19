@@ -261,8 +261,10 @@
 
         var url = $(this).attr("href");
 
+        // remove from the table using jquery
         //var url_array = url.split("/");
         //var row = $("#row_for_item_id_" + url_array[url_array.length-2]);
+        //row.remove();
 
         $.post(url)
             .done(function(data, textStatus, jqXHR) {
@@ -271,6 +273,7 @@
                 //$("#total_local_td").html(data["total_local"]);
                 location.reload();
             });
+
     });
 
 

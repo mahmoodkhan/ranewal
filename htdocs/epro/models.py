@@ -28,10 +28,10 @@ def validate_positive(value):
 
 def validate_gl_account(value):
     try:
-        if len(str(int(value))) > 5:
-            raise ValidationError("%s must be a five digits long number" % value)
+        if len(str(int(value))) > 4:
+            raise ValidationError("%s must be a four digits long number" % value)
     except Exception as e:
-        raise ValidationError("%s must be a five digits long number" % value)
+        raise ValidationError("%s must be a four digits long number" % value)
 
 
 class CommonBaseAbstractModel(models.Model):

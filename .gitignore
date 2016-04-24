@@ -33,6 +33,7 @@ feedback/
 
 # ignore static files folders
 htdocs/eproweb/static/admin/*
+htdocs/eproweb/fixtures/*
 htdocs/eproweb/static/epro/*
 htdocs/eproweb/static/rest_framework/*
 htdocs/eproweb/static/rest_framework_swagger/*

@@ -114,6 +114,9 @@ USE_TZ = True
 # Where to get redirected after logging in.
 LOGIN_REDIRECT_URL = '/'
 
+#https://docs.djangoproject.com/en/1.9/ref/settings/#std:setting-FIXTURE_DIRS
+FIXTURE_DIRS = [os.path.join(BASE_DIR, 'fixtures'),]
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 # STATIC_ROOT = BASE_DIR + "/static/"

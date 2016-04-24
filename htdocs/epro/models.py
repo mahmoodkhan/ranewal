@@ -310,6 +310,20 @@ class Vendor(CommonBaseAbstractModel):
     class Meta(object):
         verbose_name = 'Vendor'
 
+class Unit(CommonBaseAbstractModel):
+    mnemonic = models.CharField(max_length=4, null=True, blank=True)
+    description = models.CharField(max_length=100, null=True, blank=True)
+
+    def __unicode__(self):
+        return "%s - %s" % (self.mnemonic, self.description)
+
+    def __str__(self):
+        return "%s - %s" % (self.mnemonic, self.description)
+
+    class Meta(object):
+        verbose_name = "Unit"
+        ordering = ["description"]
+
 
 class Item(CommonBaseAbstractModel):
     item_sno = models.PositiveIntegerField(verbose_name='SNo')
@@ -317,7 +331,8 @@ class Item(CommonBaseAbstractModel):
                                             related_name='items',
                                             on_delete=models.CASCADE)
     quantity_requested = models.PositiveIntegerField(validators=[MinValueValidator(0.0)], verbose_name='Quantity')
-    unit = models.CharField(max_length=20, null=False, blank=False)
+    #unit = models.CharField(max_length=20, null=False, blank=False)
+    unit = models.ForeignKey(Unit, related_name='units', null=True, blank=True, on_delete=models.SET_NULL)
     description_pr = models.TextField(null=False, blank=False, verbose_name='Description',
                                         help_text='Provide detailed description')
     description_po = models.TextField(null=False, blank=True)
@@ -368,7 +383,7 @@ class Item(CommonBaseAbstractModel):
     class Meta(object):
         verbose_name = 'Item'
         ordering = ['purchase_request']
-        order_with_respect_to = 'purchase_request'
+        #order_with_respect_to = 'purchase_request'
 
 
 class FinanceCodes(CommonBaseAbstractModel):

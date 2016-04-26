@@ -35,22 +35,13 @@
                     <div class="orderStatus">
                         <ul class="row">
                             <li class="col done">Originated on {{ pr.origination_date|date }} by {{ pr.originator }}</li>
-                            {% if pr.procurement_review_requested_date %}
-                                <li class="col done">Procurement Review Requested on {{ pr.procurement_review_requested_date|date }} </li>
-                            {% else %}
-                                <li class="col">Procurement Review Request Pending</li>
-                            {% endif %}
+
                             {% if pr.procurement_review_date %}
                                 <li class="col done">Procurement Review  {% if pr.procurement_review_date %} Completed on {{ pr.procurement_review_date|date }} by {{ pr.procurement_review_done_by }} {% endif %}</li>
                             {% else %}
                                 <li class="col">Procurement Review Pending</li>
                             {% endif %}
 
-                            {% if pr.approval1_requested_date %} 
-                                <li class="col done">Fund Approval 1 Requested on {{ approval1_requested_date|date }}</li>
-                            {% else %}
-                                <li class="col">Fund Approval 1 Request to {{ pr.approver1 }}</span> Pending</li>
-                            {% endif %}
 
                             {% if pr.approval1_date %}
                                     <li class="col done">Fund Approval 1 Completed on {{ pr.approval1_date|date }} by {{ pr.approver1 }} </li>

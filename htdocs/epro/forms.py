@@ -210,7 +210,7 @@ class FinanceCodesForm(forms.ModelForm):
             raise ValidationError(_("Allocation_percent is required."))
 
         total = item.finance_codes.aggregate(Sum('allocation_percent'))
-        if not self.pk and total['allocation_percent__sum']:
+        if not self.instance.pk and total['allocation_percent__sum']:
             if ( float(total['allocation_percent__sum']) + allocation_percent) > 100:
                 raise ValidationError(_("Allocations cannot be more than 100%"))
         else:

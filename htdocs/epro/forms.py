@@ -165,6 +165,7 @@ class PurchaseRequestItemForm(forms.ModelForm):
             url = 'item_new'
             url_params = {'pr': kwargs['initial']['purchase_request']}
 
+        self.fields['unit'].empty_label = ''
         self.helper.form_action = reverse_lazy(url, kwargs=url_params)
         self.helper.form_id = 'id_pr_item_form'
         self.helper.add_input(Submit('submit', 'Save', css_class='btn-sm btn-primary'))
@@ -227,7 +228,7 @@ class FinanceCodesForm(forms.ModelForm):
         else:
             form_action = "financecodes_new"
             params = {"item_id": kwargs['initial'].get('item', None)}
-        print("form_action: %s params: %s" % (form_action, params))
+        #print("form_action: %s params: %s" % (form_action, params))
         self.helper.form_action = reverse_lazy(form_action, kwargs=params)
         self.fields['fund_code'].empty_label = ''
         self.fields['dept_code'].empty_label = ''

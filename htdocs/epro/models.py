@@ -130,6 +130,18 @@ class ActivityCode(CommonBaseAbstractModel):
 
 
 class PurchaseRequestStatus(CommonBaseAbstractModel):
+    """ A PR goes through these statuses.
+    STATUS_DRAFT = 'drafted'
+    STATUS_PENDING_PROCUREMENT_VERIFICATION = 'Procurement Verified'
+    STATUS_PENDING_APPROVAL = 'Approved'
+    STATUS_PENDING_APPROVAL = 'Approved II'
+    STATUS_PENDING_FINANCIAL_REVIEW = 'Finance Reviewed'
+    STATUS_ONGOING = 'Open'
+    STATUS_COMPLETED = 'completed'
+    STATUS_ONHOLD = 'onhold'
+    STATUS_CANCELED = 'canceled'
+    STATUS_REJECTED = 'rejected'
+    """
     status = models.CharField(max_length=50, null=False, blank=False)
 
     def __unicode__(self):
@@ -155,27 +167,6 @@ class PurchaseRequestManager(models.Manager):
 
 
 class PurchaseRequest(CommonBaseAbstractModel):
-    STATUS_DRAFT = 'drafted'
-    STATUS_PENDING_PROCUREMENT_VERIFICATION = 'pending_procurement_verification'
-    STATUS_PENDING_APPROVAL = 'pending_approval'
-    STATUS_PENDING_FINANCIAL_REVIEW = 'pending_financial_review'
-    STATUS_ONGOING = 'ongoing'
-    STATUS_COMPLETED = 'completed'
-    STATUS_ONHOLD = 'onhold'
-    STATUS_CANCELED = 'canceled'
-    STATUS_REJECTED = 'rejected'
-    PR_STATUS_CHOICES = (
-        (STATUS_DRAFT, 'Draf'),
-        (STATUS_PENDING_PROCUREMENT_VERIFICATION, 'Pending Procurement Verification'),
-        (STATUS_PENDING_APPROVAL, 'Pending Approval'),
-        (STATUS_PENDING_FINANCIAL_REVIEW, 'Pending Financial Review'),
-        (STATUS_ONGOING, 'Ongoing'),
-        (STATUS_COMPLETED, 'Completed'),
-        (STATUS_ONHOLD, 'On Hold'),
-        (STATUS_REJECTED, 'Rejected'),
-        (STATUS_CANCELED, 'Canceled'),
-    )
-
     TYPE_GOODS = '0'
     TYPE_SERVICES = '1'
     PR_TYPE_CHOICES = (
@@ -190,12 +181,6 @@ class PurchaseRequest(CommonBaseAbstractModel):
         (EXPENSE_TYPE_OPERATIONAL, 'Operational'),
     )
 
-    def is_finalized(self):
-        return self.status == STATUS_COMPLETED
-
-    def is_canceled(self):
-        return self.status == STATUS_CANCELED
-
     country = models.ForeignKey(Country, related_name='prs', null=False, blank=False, on_delete=models.CASCADE, help_text="<span style='color:red'>*</span> The country in which this PR is originated")
     office = models.ForeignKey(Office, related_name='prs', null=True, blank=True, on_delete=models.DO_NOTHING, help_text="<span style='color:red'>*</span> The Office in which this PR is originated")
     sno = models.PositiveIntegerField(verbose_name='SNo', null=False, blank=False)
@@ -206,32 +191,29 @@ class PurchaseRequest(CommonBaseAbstractModel):
     required_date = models.DateField(auto_now=False, auto_now_add=False, null=False, blank=False, help_text="<span style='color:red'>*</span> The required date by which this PR should be fullfilled.")
     originator = models.ForeignKey(UserProfile, related_name='prs', on_delete=models.DO_NOTHING)
     origination_date = models.DateField(auto_now=False, auto_now_add=True)
-    procurement_review_requested_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    procurement_review_done_by = models.ForeignKey(UserProfile, related_name='pr_procurement_verifier', blank=True, null=True, on_delete=models.DO_NOTHING)
+    procurement_review_by = models.ForeignKey(UserProfile, related_name='pr_procurement_verifier', blank=True, null=True, on_delete=models.DO_NOTHING)
     procurement_review_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    approval1_requested_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
     approver1 = models.ForeignKey(UserProfile, blank=True, null=True, related_name='pr_approvers1',
         on_delete=models.SET_NULL,
         help_text="<span style='color:red'>*</span> This is the person who manages the Fund")
     approval1_date = models.DateField(auto_now=False, blank=True, null=True, auto_now_add=False)
-    approval2_requested_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
     approver2 = models.ForeignKey(UserProfile, blank=True, null=True, related_name='pr_approver2',
         on_delete=models.SET_NULL,
         help_text="Refer to your <abbr title='Approval Authority Matrix'>AAM</abbr> to determine if you need to specify a second approval.")
     approval2_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    finance_review_requested_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
     finance_reviewer = models.ForeignKey(UserProfile, blank=True, null=True, related_name='pr_reviewer',
         on_delete=models.SET_NULL)
     finance_review_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
     submission_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
     status = models.ForeignKey(PurchaseRequestStatus, blank=False, null=False, on_delete=models.DO_NOTHING)
+    status_notes = models.TextField(null=True, blank=True)
     pr_type = models.CharField(max_length=50, choices=PR_TYPE_CHOICES, default=TYPE_GOODS, null=True, blank=True)
     expense_type = models.CharField(max_length=50, choices=EXPENSE_TYPE_CHOICES, null=True, blank=True)
     processing_office = models.ForeignKey(Office, related_name='pr_processing_office', blank=True, null=True, on_delete=models.SET_NULL)
     assignedBy = models.ForeignKey(UserProfile, blank=True, null=True, related_name='assigner', on_delete=models.SET_NULL)
     assignedTo = models.ForeignKey(UserProfile, blank=True, null=True, related_name='assignee', on_delete=models.SET_NULL)
     assigned_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    notes = models.TextField(max_length=255, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
     preferred_supplier = models.BooleanField(default=False)
     cancellation_requested_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
     cancellation_requested_by = models.ForeignKey(UserProfile, null=True, blank=True, related_name='cancellation_requested_by', on_delete=models.SET_NULL)

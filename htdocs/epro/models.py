@@ -239,7 +239,7 @@ class PurchaseRequest(CommonBaseAbstractModel):
 
     def save(self, *args, **kwargs):
         if not self.id:
-            status = PurchaseRequestStatus.objects.get(status='Draft')
+            status = PurchaseRequestStatus.objects.get(status='Drafted')
             self.status = status
             self.type = PurchaseRequest.TYPE_GOODS
             # increase the PR serial number by one for by office
@@ -293,7 +293,7 @@ class Vendor(CommonBaseAbstractModel):
         verbose_name = 'Vendor'
 
 class Unit(CommonBaseAbstractModel):
-    mnemonic = models.CharField(max_length=4, null=True, blank=True)
+    mnemonic = models.CharField(max_length=4, null=False, blank=False)
     description = models.CharField(max_length=100, null=True, blank=True)
 
     def __unicode__(self):
@@ -314,7 +314,7 @@ class Item(CommonBaseAbstractModel):
                                             on_delete=models.CASCADE)
     quantity_requested = models.PositiveIntegerField(validators=[MinValueValidator(0.0)], verbose_name='Quantity')
     #unit = models.CharField(max_length=20, null=False, blank=False)
-    unit = models.ForeignKey(Unit, related_name='units', null=True, blank=True, on_delete=models.SET_NULL)
+    unit = models.ForeignKey(Unit, related_name='units', null=False, blank=False, on_delete=models.DO_NOTHING)
     description_pr = models.TextField(null=False, blank=False, verbose_name='Description',
                                         help_text='Provide detailed description')
     description_po = models.TextField(null=False, blank=True)

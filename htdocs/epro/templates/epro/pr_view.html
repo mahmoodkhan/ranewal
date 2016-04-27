@@ -49,23 +49,10 @@
                                     <li class="col">Fund Approval 1 Pending</li>
                             {% endif %}
 
-                            {% if pr.approver2 %}
-                                {% if pr.approval2_requested_date %} 
-                                    <li class="col">Fund Approval 2 Requested on {{ approval2_requested_date|date }}</li>
-                                {% else %}
-                                    <li class="col">Fund Approval 2 Request Pending</li>
-                                {% endif %}
-
-                                {% if pr.approval2_date %}
-                                    <li class="col done">Fund Approval 2 Completed on {{ pr.approval2_date|date }} by {{ pr.approver2 }} </li>
-                                {% else %}
-                                    <li class="col">Fund Approval 2 Pending</li>
-                                {% endif %}
-                            {% endif %}
-                            {% if pr.finance_review_requested_date %}
-                                <li class="col done">Financial Review Requested on {{ pr.finance_review_requested_date|date }}</li>
+                            {% if pr.approval2_date %}
+                                <li class="col done">Fund Approval 2 Completed on {{ pr.approval2_date|date }} by {{ pr.approver2 }} </li>
                             {% else %}
-                                <li class="col">Financial Review Request Pending</li>
+                                <li class="col">Fund Approval 2 Pending</li>
                             {% endif %}
 
                             {% if pr.finance_review_date %}
@@ -284,7 +271,6 @@
         $("#pr_items_modal_content_div").load($(this).attr("href"), function(response, status, xhr) {
             //console.log(xhr.status + " " + xhr.statusText + " " +  status);
             $('#pr_items_tabs_ul a[href="#financecodes_tab"]').hide();
-            $("#id_unit").select2({placeholder: 'Unit', allowClear: true, });
         });
         
         $('#pr_items_modal_div').modal('show');

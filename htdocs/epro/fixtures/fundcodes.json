@@ -1,0 +1,50 @@
+[
+{
+    "model": "epro.fundcode",
+    "pk": 1,
+    "fields": {
+        "created_by": 1,
+        "updated_by": null,
+        "created": "2016-04-26T17:56:03.135Z",
+        "updated": null,
+        "country": 1,
+        "code": "12229"
+    }
+},
+{
+    "model": "epro.fundcode",
+    "pk": 2,
+    "fields": {
+        "created_by": 1,
+        "updated_by": null,
+        "created": "2016-04-26T17:56:11.709Z",
+        "updated": null,
+        "country": 1,
+        "code": "13049"
+    }
+},
+{
+    "model": "epro.fundcode",
+    "pk": 3,
+    "fields": {
+        "created_by": 2,
+        "updated_by": null,
+        "created": "2016-04-26T17:56:33.853Z",
+        "updated": null,
+        "country": 2,
+        "code": "92229"
+    }
+},
+{
+    "model": "epro.fundcode",
+    "pk": 4,
+    "fields": {
+        "created_by": 2,
+        "updated_by": null,
+        "created": "2016-04-26T17:56:42.903Z",
+        "updated": null,
+        "country": 2,
+        "code": "93049"
+    }
+}
+]

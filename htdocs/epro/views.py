@@ -3,7 +3,7 @@ import json
 
 from django.db.models import F
 from django.http import JsonResponse
-from django.views.generic import TemplateView, FormView, View, DeleteView
+from django.views.generic import TemplateView, FormView, View, DeleteView, CreateView, UpdateView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 
@@ -15,7 +15,7 @@ from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
 
 from .models import *
-from .forms import *
+from .forms import PurchaseRequestItemAttachmentForm, PurchaseRequestItemForm, FinanceCodesForm
 from .mixins import AjaxFormResponseMixin, LoginRequiredMixin, PurchaseRequestMixin, PurchaseRequestActiveTabMixin
 from .serializers import FlatJsonSerializer
 
@@ -235,6 +235,7 @@ class PurchaseRequestItemCreateView(LoginRequiredMixin, SuccessMessageMixin, Aja
     def get_context_data(self, **kwargs):
         context = super(PurchaseRequestItemCreateView, self).get_context_data(**kwargs)
         context['finance_codes_form'] = FinanceCodesForm(initial={'item': 0})
+        context['item_attachments_form'] = PurchaseRequestItemAttachmentForm(initial={'item': 0})
         return context
 
 
@@ -259,6 +260,8 @@ class PurchaseRequestItemUpdateView(LoginRequiredMixin, SuccessMessageMixin, Aja
     def get_context_data(self, **kwargs):
         context = super(PurchaseRequestItemUpdateView, self).get_context_data(**kwargs)
         context['finance_codes_form'] = FinanceCodesForm(initial={'item': self.object.pk})
+        context['item_attachments_form'] = PurchaseRequestItemAttachmentForm(initial={'item': self.object.pk})
+        context['attachments'] = ItemAttachment.objects.filter(item=self.object.pk)
         return context
 
 
@@ -285,6 +288,16 @@ class PurchaseRequestItemDeleteView(LoginRequiredMixin, DeleteView):
         super(PurchaseRequestItemDeleteView, self).delete(request, *args, **kwargs)
         self.pr_totals = Item.objects.filter(purchase_request=self.object.purchase_request.pk).aggregate(total_usd = Sum('price_estimated_usd_subtotal'), total_local = Sum('price_estimated_local_subtotal'))
         return JsonResponse({"total_usd": self.pr_totals["total_usd"], "total_local": self.pr_totals["total_local"]})
+
+
+class ItemAttachmentCreateView(SuccessMessageMixin, AjaxFormResponseMixin, CreateView):
+    model = ItemAttachment
+    form_class = PurchaseRequestItemAttachmentForm
+    success_message = "Attachment uploaded successfully."
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user.userprofile
+        return super(ItemAttachmentCreateView, self).form_valid(form)
 
 
 class FinanceCodesCreateView(SuccessMessageMixin, AjaxFormResponseMixin, CreateView):

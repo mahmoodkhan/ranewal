@@ -28,6 +28,8 @@ urlpatterns = [
     url(r'^pr/item/financecodes/edit/(?P<pk>\d+)/$', FinanceCodesUpdateView.as_view(), name='financecodes_edit'),
     #url(r'^pr/item/financecodes/view/$', FinanceCodesDetailView.as_view(), name='financecodes_view'),
     url(r'^pr/item/financecodes/del/(?P<pk>\d+)/$', FinanceCodesDeleteView.as_view(), name='financecodes_del'),
+
+    url(r'^pr/item/attachments/add/(?P<pk>\d+)/$', ItemAttachmentCreateView.as_view(), name='item_attachment'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

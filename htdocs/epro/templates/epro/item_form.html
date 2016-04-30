@@ -1,4 +1,5 @@
 {% load crispy_forms_tags %}
+{% load customtags %}
 <!--
 <div class="modal-header" style="padding: 5px;">
     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -9,9 +10,13 @@
 <div class="modal-body" style="padding: 0px 2px 0px 2px;" >
     <button type="button" class="close" style="padding:5px;" data-dismiss="modal" aria-hidden="true">&times;</button>
     <!-- Nav tabs -->
+    <div id="dropzone-previews"></div>
     <ul id="pr_items_tabs_ul" class="nav nav-tabs" role="tablist">
         <li role="presentation" class="active">
             <a href="#item_tab" aria-controls="item_form" role="tab" data-toggle="tab"> Item</a>
+        </li>
+        <li role="presentation">
+            <a href="#attachments_tab" aria-controls="attachments_form" role="tab" data-toggle="tab"> Attachments</a>
         </li>
         <li role="presentation">
             <a href="#financecodes_tab" aria-controls="finance_codes_form" role="tab" data-toggle="tab"> Finance Codes</a>
@@ -21,60 +26,93 @@
     <!-- Tab panes -->
     <div class="tab-content">
         <div role="tabpanel" class="tab-pane active" id="item_tab"> <br />{% crispy form %} </div>
+        <div role="tabpanel" class="tab-pane" id="attachments_tab">
+            <div id="finance_codes_list_panel" class="panel panel-info">
+                <div class="panel-heading">Uploaded Attachments
+                    <button id="add_attachment_btn" class="btn btn-xs btn-success pull-right" data-target="#attachment_form_collapse_div" data-toggle="collapse">
+                        <span class="glyphicon glyphicon-plus"></span> Upload New Attachment</a>
+                    </button>
+                </div>
+                <div class = "table-responsive">
+                    <table class="table table-bordered table-striped table-hover table-condensed">
+                        <tr>
+                            <th>File Name</th>
+                            <th width="90px">FileSize</th>
+                            <th></th>
+                        </tr>
+                        {% for attachment in attachments %}
+                        <tr>
+                            <td><a href="{{ MEDIA_URL }}{{ attachment.file}}" target="_blank">{{ attachment.file|filename }}</a></td>
+                            <td>{{ attachment.file_size|humanize_bytes }}</td>
+                            <td width="5px"><a href="#" data-target="#confirm-delete" style="color:red;"><span class="glyphicon glyphicon-trash"></span></a></td>
+                        <tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+            <div id="attachment_form_collapse_div" class="collapse panel panel-info">
+                <div class="panel-heading">Upload New Attachment</div>
+                <div id="attachment_form_div" class="panel-body">
+                    {% crispy item_attachments_form %}
+                </div>
+            </div>
+        </div>
         <div role="tabpanel" class="tab-pane" id="financecodes_tab">
             <div id="finance_codes_list_panel" class="panel panel-info">
-                <div class="panel-heading" style="padding: 5px 2px 5px 5px;">Assigned Cost Allocations
+                <div class="panel-heading">Assigned Cost Allocations
                     <button id="add_new_finance_codes_btn" class="btn btn-xs btn-success pull-right">
                         <span class="glyphicon glyphicon-plus"></span> Add Finance Dimensions</a>
                     </button>
                 </div>
                 <div class="clearfix"></div>
-                {% if item.finance_codes.all %}
-                    <div class = "table-responsive">
-                        <table id="finance_codes_table" class="table table-bordered table-striped table-hover table-condensed">
+                
+                <div class = "table-responsive">
+                    <table id="finance_codes_table" class="table table-bordered table-striped table-hover table-condensed">
+                        <thead>
+                        <tr>
+                            <th style="display:none;">ItemId</th>
+                            <th style="display:none;">FinanceCodesId</th>
+                            <th>GL</th>
+                            <th style="display:none;">FundId</th>
+                            <th>Fund</th>
+                            <th style="display:none;">DeptId</th>
+                            <th>Dept</th>
+                            <th style="display:none;">OfficeId</th>
+                            <th>Office</th>
+                            <th>LIN</th>
+                            <th>Activity</th>
+                            <th>Emp ID</th>
+                            <th>% Alloc</th>
+                            <th style="display:none;"></th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for fc in item.finance_codes.all %}
                             <tr>
-                                <th style="display:none;">ItemId</th>
-                                <th style="display:none;">FinanceCodesId</th>
-                                <th>GL</th>
-                                <th style="display:none;">FundId</th>
-                                <th>Fund</th>
-                                <th style="display:none;">DeptId</th>
-                                <th>Dept</th>
-                                <th style="display:none;">OfficeId</th>
-                                <th>Office</th>
-                                <th>LIN</th>
-                                <th>Activity</th>
-                                <th>Emp ID</th>
-                                <th>% Alloc</th>
-                                <th style="display:none;"></th>
-                                <th></th>
+                                <td style="display:none;">{{ item.pk }}</td>
+                                <td style="display:none;">{{ fc.pk }}</td>
+                                <td>{{ fc.gl_account }}</td>
+                                <td style="display:none;">{{ fc.fund_code.pk }}</td>
+                                <td>{{ fc.fund_code }}</td>
+                                <td style="display:none;">{{ fc.dept_code.pk }}</td>
+                                <td>{{ fc.dept_code }}</td>
+                                <td style="display:none;">{{ fc.office_code.pk }}</td>
+                                <td>{{ fc.office_code }}</td>
+                                <td>{{ fc.lin_code|default:"" }}</td>
+                                <td>{{ fc.activity_code|default:"" }}</td>
+                                <td>{{ fc.employee_id|default:"" }}</td>
+                                <td>{{ fc.allocation_percent }}</td>
+                                <td>
+                                    <a href="{% url 'financecodes_edit' fc.pk %}" data-finance-codes-id={{ fc.pk }} class="edit"><span class="glyphicon glyphicon-edit"></span></a>
+                                    <a href="#" data-finance-codes-id={{ fc.pk }} data-href="{% url 'financecodes_del' fc.pk %}" data-toggle="modal" data-target="#confirm-delete" lass="del" style="color:red;"><span class="glyphicon glyphicon-trash"></span></a>
+                                </td>
                             </tr>
-                            {% for fc in item.finance_codes.all %}
-                                <tr>
-                                    <td style="display:none;">{{ item.pk }}</td>
-                                    <td style="display:none;">{{ fc.pk }}</td>
-                                    <td>{{ fc.gl_account }}</td>
-                                    <td style="display:none;">{{ fc.fund_code.pk }}</td>
-                                    <td>{{ fc.fund_code }}</td>
-                                    <td style="display:none;">{{ fc.dept_code.pk }}</td>
-                                    <td>{{ fc.dept_code }}</td>
-                                    <td style="display:none;">{{ fc.office_code.pk }}</td>
-                                    <td>{{ fc.office_code }}</td>
-                                    <td>{{ fc.lin_code|default:"" }}</td>
-                                    <td>{{ fc.activity_code|default:"" }}</td>
-                                    <td>{{ fc.employee_id|default:"" }}</td>
-                                    <td>{{ fc.allocation_percent }}</td>
-                                    <td>
-                                        <a href="{% url 'financecodes_edit' fc.pk %}" data-finance-codes-id={{ fc.pk }} class="edit"><span class="glyphicon glyphicon-edit"></span></a>
-                                        <a href="#" data-finance-codes-id={{ fc.pk }} data-href="{% url 'financecodes_del' fc.pk %}" data-toggle="modal" data-target="#confirm-delete" lass="del" style="color:red;"><span class="glyphicon glyphicon-trash"></span></a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </table>
-                    </div>
-                {% else %}
-                    <span class="label label-info"> No Allocations entered yet.</span>
-                {% endif %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
                 <div class="panel-footer" style="padding: 2px;">
                     {% if item.finance_codes.all %}
                         {% if item.default_finance_codes %}
@@ -100,6 +138,7 @@
 </div>
 {% block epro_extra_js %}
 <script type = "text/javascript">
+    
     var stock_finance_codes_form;
     var is_something_changed_in_item_form;
     $(document).ready(function() { 
@@ -171,7 +210,7 @@
     $("#financecodes_tab").on("click", "#add_new_finance_codes_btn", function(e) {
         e.preventDefault();
         resetFinanceCodesForm();
-        $("#financecodes_form_collapse_div").collapse('show');
+        $("#financecodes_form_collapse_div").collapse('toggle');
         //The Item Edit button must be clicked if item's pk is available.
         {% if item.pk %}
             // reset the form action to add finance codes not edit.
@@ -225,11 +264,30 @@
                 $('#pr_items_tabs_ul a[href="#financecodes_tab"]').show();
                 $('#pr_items_tabs_ul a[href="#financecodes_tab"]').trigger('click');
                 
+                // show the attachment tab
+                $('#pr_items_tabs_ul a[href="#attachments_tab"]').show();
                 // Show django messages that may have been set in the View.
                 var json = $.parseJSON(jqXHR.responseText);
                 show_django_ajax_messages(json, "#modal_messages");
             });
     });
+
+    var myDropzone = new Dropzone("form#id_attachment_form", { 
+        url: $("form#id_attachment_form").attr("action"),
+        //autoProcessQueue : false, // prevents from uploading dropped files immediately.
+        parallelUploads: 2,
+        maxFilesize: 2, // MB
+        
+    });
+    
+    myDropzone.on("success", function(file) {
+        console.log("replace this line by adding the uploaded file the table above");
+        console.log(file);
+        file.previewElement.addEventListener("click", function() {
+            myDropzone.removeFile(file);
+        });
+    });
+
 
     // Submit FinanceCodes Form via AJAX for adding and editing of finance codes.
     $('#financecodes_form_div').on('submit', '#id_finance_codes_form', function(event) {
@@ -237,7 +295,7 @@
         var form_url = $(this).attr('action');
         var form_data = $(this).serialize();
         var fcid_editted = $("#id_submit_finance_codes_btn").data()['fcid'];
-        console.log(form_url);
+
         $.ajax( {method: 'POST', url: form_url, data: form_data,  global: false, } )
             .done(function(data, textStatus, jqXHR) {
                 if (jqXHR.getResponseHeader('error') == "True") {
@@ -288,8 +346,9 @@
                     tr += "<td>\
                                 <a href=" + url + " data-finance-codes-id=" + finance_code['id'] + " class=\"edit\"><span class=\"glyphicon glyphicon-edit\"></span></a>\
                                 <a href=" + url + " data-finance-codes-id=" + finance_code['id'] + " class=\"del\" style=\"color:red;\"><span class=\"glyphicon glyphicon-trash\"></span></a>\
-                            </td>";
-                    $("#finance_codes_table").append(tr);
+                            </td></tr>";
+                    
+                    $("#finance_codes_table tbody").append(tr);
                 }
 
                 // Show django messages that may have been set in the View.
@@ -336,5 +395,6 @@
         $("#id_quantity_requested").focus();
         $("#id_unit").select2({placeholder: 'Unit', allowClear: true, });
     });
+ 
 </script>
 {% endblock epro_extra_js %}

@@ -271,6 +271,7 @@
         $("#pr_items_modal_content_div").load($(this).attr("href"), function(response, status, xhr) {
             //console.log(xhr.status + " " + xhr.statusText + " " +  status);
             $('#pr_items_tabs_ul a[href="#financecodes_tab"]').hide();
+            $('#pr_items_tabs_ul a[href="#attachments_tab"]').hide();
         });
         
         $('#pr_items_modal_div').modal('show');

@@ -1,9 +1,16 @@
+import os
 from datetime import date
 from django import template
 from eproweb import utils
 
 
 register = template.Library()
+
+
+@register.filter
+def filename(value):
+    return os.path.basename(value.file.name)
+
 
 @register.filter
 def running_total(fine_list):

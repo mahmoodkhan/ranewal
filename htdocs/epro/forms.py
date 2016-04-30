@@ -15,7 +15,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit, Reset, Button, HTML, Layout, Field, Div, Column
 from crispy_forms.bootstrap import FormActions, AppendedText
 
-from .models import Country, Office, Currency, UserProfile, PurchaseRequest, Item, FinanceCodes
+from .models import Country, Office, Currency, UserProfile, PurchaseRequest, Item, FinanceCodes, ItemAttachment
 
 
 """
@@ -171,6 +171,38 @@ class PurchaseRequestItemForm(forms.ModelForm):
         self.helper.add_input(Submit('submit', 'Save', css_class='btn-sm btn-primary'))
         self.helper.add_input(Reset('reset', 'Reset', css_class='btn-sm btn-warning'))
 
+
+class PurchaseRequestItemAttachmentForm(forms.ModelForm):
+    class Meta:
+        model = ItemAttachment
+        fields = ['item', 'file',]
+        widgets = {'item': forms.HiddenInput()}
+
+    def __init__(self, *args, **kwargs):
+        super(PurchaseRequestItemAttachmentForm, self).__init__(*args, **kwargs)
+        self.fields['file'].label = ''
+        self.fields['file'].widget.attrs.update({"style": "visibility:hidden;"})
+        self.helper = setup_boostrap_helpers(formtag=True)
+        self.helper.form_id = 'id_attachment_form'
+        self.helper.form_class = "dropzone"
+        self.helper.form_action = reverse_lazy("item_attachment", kwargs={"pk": kwargs['initial'].get('item', 0)})
+        #self.helper.add_input(Submit('submit', 'Upload', css_class='btn-sm btn-primary'))
+
+    def clean_file(self):
+        file = self.cleaned_data['file']
+        if file:
+            #print(file.content_type)
+            #print(file.size)
+            pass
+        return file
+
+    def save(self, commit=True):
+        instance = super(PurchaseRequestItemAttachmentForm, self).save(commit=False)
+        instance.file_type = self.cleaned_data['file'].content_type
+        instance.file_size = self.cleaned_data['file'].size
+        if commit:
+            instance.save()
+        return instance
 
 
 class FinanceCodesForm(forms.ModelForm):

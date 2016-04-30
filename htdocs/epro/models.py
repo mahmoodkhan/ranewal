@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 import datetime, time, logging
 from decimal import Decimal
 
@@ -7,6 +8,7 @@ from django.core.exceptions import ValidationError
 
 from django.db.models import Q, Sum, Max, Min, Count
 from django.db import models
+from django.forms.models import model_to_dict
 
 from django.utils import timezone
 from django.utils.timezone import utc
@@ -16,6 +18,73 @@ from django.contrib.auth.models import User
 from djangocosign.models import UserProfile, Region, Country, Office
 
 from .fields import USDCurrencyField
+
+
+class ModelDiffMixin(object):
+    """
+    A model mixin that tracks model fields' values and provide some useful api
+    to know what fields have been changed.
+    Usage:
+        >>> p = Place()
+        >>> p.has_changed
+        False
+        >>> p.changed_fields
+        []
+        >>> p.rank = 42
+        >>> p.has_changed
+        True
+        >>> p.changed_fields
+        ['rank']
+        >>> p.diff
+        {'rank': (0, 42)}
+        >>> p.categories = [1, 3, 5]
+        >>> p.diff
+        {'categories': (None, [1, 3, 5]), 'rank': (0, 42)}
+        >>> p.get_field_diff('categories')
+        (None, [1, 3, 5])
+        >>> p.get_field_diff('rank')
+        (0, 42)
+        >>>
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(ModelDiffMixin, self).__init__(*args, **kwargs)
+        self.__initial = self._dict
+
+    @property
+    def diff(self):
+        d1 = self.__initial
+        d2 = self._dict
+        diffs = [(k, (v, d2[k])) for k, v in d1.items() if v != d2[k]]
+        return dict(diffs)
+
+    @property
+    def has_changed(self):
+        return bool(self.diff)
+
+    @property
+    def changed_fields(self):
+        return self.diff.keys()
+
+    def get_field_diff(self, field_name):
+        """
+        Returns a diff for field if it's changed and None otherwise.
+        """
+        return self.diff.get(field_name, None)
+
+    def save(self, *args, **kwargs):
+        """
+        Saves model and set initial state.
+        """
+        super(ModelDiffMixin, self).save(*args, **kwargs)
+        self.__initial = self._dict
+
+    @property
+    def _dict(self):
+        return model_to_dict(self, fields=[field.name for field in
+                             self._meta.fields])
+    class Meta:
+        abstract = True
 
 
 def validate_even(value):
@@ -63,7 +132,7 @@ class Currency(CommonBaseAbstractModel):
     def __str__(self):
         return self.code
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Currency'
         verbose_name_plural = "Currencies"
         ordering = ['country', 'code']
@@ -79,7 +148,7 @@ class FundCode(CommonBaseAbstractModel):
     def __ustr__(self):
         return u'%s' % self.code
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Fund Code'
         ordering = ['code']
 
@@ -94,7 +163,7 @@ class DeptCode(CommonBaseAbstractModel):
     def __str__(self):
         return '%s' % self.code
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Department Code'
         ordering = ['code']
 
@@ -109,7 +178,7 @@ class LinCode(CommonBaseAbstractModel):
     def __str__(self):
         return '%s' % self.lin_code
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'LIN Code'
         ordering = ['lin_code']
 
@@ -124,7 +193,7 @@ class ActivityCode(CommonBaseAbstractModel):
     def __str__(self):
         return '%s' % self.activity_code
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Activity Code'
         ordering = ['activity_code']
 
@@ -150,7 +219,7 @@ class PurchaseRequestStatus(CommonBaseAbstractModel):
     def __str__(self):
         return '%s' % self.status
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Purchase Request Status'
         verbose_name_plural = "Status"
         ordering = ['status']
@@ -251,7 +320,7 @@ class PurchaseRequest(CommonBaseAbstractModel):
 
         super(PurchaseRequest, self).save(*args, **kwargs)
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Purchase Request'
         verbose_name_plural = "Purchase Requests"
         ordering = ['country', 'office']
@@ -289,7 +358,7 @@ class Vendor(CommonBaseAbstractModel):
     def get_absolute_url(self):
         return reverse_lazy('vendor', kwargs={'pk': self.pk}) #args=[str(self.id)])
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Vendor'
 
 class Unit(CommonBaseAbstractModel):
@@ -302,7 +371,7 @@ class Unit(CommonBaseAbstractModel):
     def __str__(self):
         return "%s - %s" % (self.mnemonic, self.description)
 
-    class Meta(object):
+    class Meta:
         verbose_name = "Unit"
         ordering = ["description"]
 
@@ -362,10 +431,26 @@ class Item(CommonBaseAbstractModel):
         total = self.finance_codes.all().aggregate(Sum('allocation_percent'))['allocation_percent__sum']
         return total
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Item'
         ordering = ['purchase_request']
         #order_with_respect_to = 'purchase_request'
+
+def upload_path_handler(instance, filename):
+    return "purchase_request/{office}/pr_{pr_pk}/item_{item_id}/{file}".format(office=instance.item.purchase_request.office.name, pr_pk=instance.item.purchase_request.pk, item_id=instance.item.id, file=filename)
+
+class ItemAttachment(CommonBaseAbstractModel):
+    item = models.ForeignKey(Item, blank=False, null=False)
+    file = models.FileField(upload_to=upload_path_handler)
+    file_type = models.CharField(max_length=100, null=True, blank=True)
+    file_size = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Attachment"
+        ordering = ["item",]
+
+    def get_absolute_url(self):
+        return reverse_lazy('item_attachment', kwargs={'pk': self.item.purchase_request.pk})
 
 
 class FinanceCodes(CommonBaseAbstractModel):
@@ -472,7 +557,7 @@ class PurchaseOrder(CommonBaseAbstractModel):
             self.expected_delivery_date = self.quotation_analysis.delivery_date
         super(PurchaseOrder, self).save(*args, **kwargs)
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Purchase Order'
         ordering = ['purchase_request', ]
 
@@ -513,7 +598,7 @@ class GoodsReceivedNote(CommonBaseAbstractModel):
     received_date = models.DateField(auto_now=False, auto_now_add=False, null=True, blank=True)
     items = models.ManyToManyField(Item, through='GoodsReceivedNoteItem')
 
-    class Meta(object):
+    class Meta:
         verbose_name = 'Goods Received Note'
         ordering = ['purchase_request',]
 

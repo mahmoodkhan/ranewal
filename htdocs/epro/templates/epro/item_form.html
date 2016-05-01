@@ -27,7 +27,7 @@
     <div class="tab-content">
         <div role="tabpanel" class="tab-pane active" id="item_tab"> <br />{% crispy form %} </div>
         <div role="tabpanel" class="tab-pane" id="attachments_tab">
-            <div id="finance_codes_list_panel" class="panel panel-info">
+            <div id="attachments_list_panel" class="panel panel-info">
                 <div class="panel-heading">Uploaded Attachments
                     <button id="add_attachment_btn" class="btn btn-xs btn-success pull-right" data-target="#attachment_form_collapse_div" data-toggle="collapse">
                         <span class="glyphicon glyphicon-plus"></span> Upload New Attachment</a>
@@ -378,6 +378,7 @@
     // Set default finance codes for PR
     $("#finance_codes_list_panel").on("click", "#set_default_finance_codes_btn", function(e) {
         e.preventDefault();
+        console.log("clicked default fc");
         $.ajax( {method: 'POST', url: $(this).attr('href'), data: {},  global: false, } )
             .done(function(data, textStatus, jqXHR) {
                 is_something_changed_in_item_form = true;

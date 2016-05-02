@@ -366,10 +366,10 @@ class Unit(CommonBaseAbstractModel):
     description = models.CharField(max_length=100, null=True, blank=True)
 
     def __unicode__(self):
-        return "%s - %s" % (self.mnemonic, self.description)
+        return "%s" % self.description
 
     def __str__(self):
-        return "%s - %s" % (self.mnemonic, self.description)
+        return "%s" % self.description
 
     class Meta:
         verbose_name = "Unit"
@@ -440,7 +440,7 @@ def upload_path_handler(instance, filename):
     return "purchase_request/{office}/pr_{pr_pk}/item_{item_id}/{file}".format(office=instance.item.purchase_request.office.name, pr_pk=instance.item.purchase_request.pk, item_id=instance.item.id, file=filename)
 
 class ItemAttachment(CommonBaseAbstractModel):
-    item = models.ForeignKey(Item, blank=False, null=False)
+    item = models.ForeignKey(Item, blank=False, null=False, related_name="attachments")
     file = models.FileField(upload_to=upload_path_handler)
     file_type = models.CharField(max_length=100, null=True, blank=True)
     file_size = models.PositiveIntegerField(null=True, blank=True)

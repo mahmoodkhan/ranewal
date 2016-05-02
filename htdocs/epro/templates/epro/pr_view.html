@@ -146,7 +146,26 @@
                     <td>{{ item.item_sno }}</td>
                     <td> {{ item.quantity_requested }} </td>
                     <td> {{ item.unit }} </td>
-                    <td> {{ item.description_pr|urlizetrunc:15|url_target_blank|safe }} </td>
+                    <td> 
+                        {% if item.attachments.exists %}
+                            <a href="#" class="item_attachments" data-item-id={{item.pk}} role="button" data-toggle="popover" data-trigger="focus"><span class="glyphicon glyphicon-paperclip"></span></a>
+                            <div class="collapse row" id="item__attachments_{{ item.pk }}">
+                                <table class="table table-bordered table-striped table-hover table-condensed" border="1">
+                                    <tr>
+                                        <th>FileName</th>
+                                        <th>FileSize</th>
+                                    </tr>
+                                    {% for attachment in item.attachments.all %}
+                                        <tr>
+                                            <td><a href="{{ MEDIA_URL }}{{ attachment.file}}" target="_blank">{{ attachment.file|filename }}</a></td>
+                                            <td>{{ attachment.file_size|humanize_bytes }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        {% endif %}
+                        {{ item.description_pr|urlizetrunc:15|url_target_blank|safe }}
+                    </td>
                     <td> {{ item.price_estimated_local }} </td>
                     <td> {{ item.price_estimated_local_subtotal }} </td>
                     <td> {{ item.price_estimated_usd }} </td>
@@ -210,9 +229,17 @@
                 html: true,
             });
         });
+        
+        $('a[data-toggle="popover"].item_attachments').each(function(){
+            var item_id = $(this).data("itemId")
+            $(this).popover({
+                content: $('#item__attachments_' + item_id).html(),
+                html: true,
+            });
+        });
 
-    // Apply datatables to the items list above
-    $("#pr_items_table").DataTable({
+        // Apply datatables to the items list above
+        $("#pr_items_table").DataTable({
             "oLanguage": {
                 "sSearch": '',
                 "sSearchPlaceholder": "Search ",

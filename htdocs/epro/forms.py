@@ -185,7 +185,7 @@ class PurchaseRequestItemAttachmentForm(forms.ModelForm):
         self.helper = setup_boostrap_helpers(formtag=True)
         self.helper.form_id = 'id_attachment_form'
         self.helper.form_class = "dropzone"
-        self.helper.form_action = reverse_lazy("item_attachment", kwargs={"pk": kwargs['initial'].get('item', 0)})
+        self.helper.form_action = reverse_lazy("item_attachment_new", kwargs={"pk": kwargs['initial'].get('item', 0)})
         #self.helper.add_input(Submit('submit', 'Upload', css_class='btn-sm btn-primary'))
 
     def clean_file(self):

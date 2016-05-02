@@ -300,6 +300,13 @@ class ItemAttachmentCreateView(SuccessMessageMixin, AjaxFormResponseMixin, Creat
         return super(ItemAttachmentCreateView, self).form_valid(form)
 
 
+class ItemAttachmentDeleteView(SuccessMessageMixin, AjaxFormResponseMixin, LoginRequiredMixin, DeleteView):
+    model = ItemAttachment
+
+    def get_success_url(self):
+        return reverse_lazy('pr_view', kwargs={'pk': self.object.item.purchase_request.pk})
+
+
 class FinanceCodesCreateView(SuccessMessageMixin, AjaxFormResponseMixin, CreateView):
     """ This form is always submitted via AJAX """
     model = FinanceCodes

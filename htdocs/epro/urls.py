@@ -29,7 +29,8 @@ urlpatterns = [
     #url(r'^pr/item/financecodes/view/$', FinanceCodesDetailView.as_view(), name='financecodes_view'),
     url(r'^pr/item/financecodes/del/(?P<pk>\d+)/$', FinanceCodesDeleteView.as_view(), name='financecodes_del'),
 
-    url(r'^pr/item/attachments/add/(?P<pk>\d+)/$', ItemAttachmentCreateView.as_view(), name='item_attachment'),
+    url(r'^pr/item/attachments/add/(?P<pk>\d+)/$', ItemAttachmentCreateView.as_view(), name='item_attachment_new'),
+    url(r'^pr/item/attachments/del/(?P<pk>\d+)/$', ItemAttachmentDeleteView.as_view(), name='item_attachment_del'),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

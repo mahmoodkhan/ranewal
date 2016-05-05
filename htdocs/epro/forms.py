@@ -149,13 +149,13 @@ class PurchaseRequestForm(forms.ModelForm):
 class PurchaseRequestItemForm(forms.ModelForm):
     class Meta:
         model = Item
-        fields = ['purchase_request', 'quantity_requested', 'unit', 'description_pr', 'price_estimated_local', ]
+        fields = ['purchase_request', 'quantity', 'unit', 'description', 'price_estimated_local', ]
         widgets = {'purchase_request': forms.HiddenInput()}
 
     def __init__(self, *args, **kwargs):
         item_id = kwargs.pop('pk', None)
         super(PurchaseRequestItemForm, self).__init__(*args, **kwargs)
-        self.fields['description_pr'].widget.attrs['rows'] = 3
+        self.fields['description'].widget.attrs['rows'] = 3
         self.helper = setup_boostrap_helpers(formtag=True)
 
         if item_id:

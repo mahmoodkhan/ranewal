@@ -19,6 +19,13 @@ from djangocosign.models import UserProfile, Region, Country, Office
 
 from .fields import USDCurrencyField
 
+"""
+fco = FinanceCodes.objects.filter(item__po_items__isnull=True).values("dept_code__code").annotate(total=Sum('item__price_estimated_usd'))
+fco = FinanceCodes.objects.filter(item__po_items__isnull=False).values("dept_code__code").annotate(total=Sum('item__price_estimated_usd'))
+
+fc = FinanceCodes.objects.values("dept_code__code").annotate(total=Sum('item__price_estimated_usd'))
+fco = FinanceCodes.objects.filter(item__po_items__isnull=False).values("dept_code__code").annotate(total=Sum('item__po_items__price_usd'))
+"""
 
 class ModelDiffMixin(object):
     """
@@ -270,7 +277,7 @@ class PurchaseRequest(CommonBaseAbstractModel):
         on_delete=models.SET_NULL,
         help_text="Refer to your <abbr title='Approval Authority Matrix'>AAM</abbr> to determine if you need to specify a second approval.")
     approval2_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
-    finance_reviewer = models.ForeignKey(UserProfile, blank=True, null=True, related_name='pr_reviewer',
+    finance_review_by = models.ForeignKey(UserProfile, blank=True, null=True, related_name='pr_reviewer',
         on_delete=models.SET_NULL)
     finance_review_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
     submission_date = models.DateField(auto_now=False, auto_now_add=False, blank=True, null=True)
@@ -377,42 +384,34 @@ class Unit(CommonBaseAbstractModel):
 
 
 class Item(CommonBaseAbstractModel):
+    purchase_request = models.ForeignKey(PurchaseRequest, related_name='items', on_delete=models.CASCADE)
     item_sno = models.PositiveIntegerField(verbose_name='SNo')
-    purchase_request = models.ForeignKey(PurchaseRequest,
-                                            related_name='items',
-                                            on_delete=models.CASCADE)
-    quantity_requested = models.PositiveIntegerField(validators=[MinValueValidator(0.0)], verbose_name='Quantity')
-    #unit = models.CharField(max_length=20, null=False, blank=False)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0.0)], verbose_name='Quantity')
     unit = models.ForeignKey(Unit, related_name='units', null=False, blank=False, on_delete=models.DO_NOTHING)
-    description_pr = models.TextField(null=False, blank=False, verbose_name='Description',
+    description = models.TextField(null=False, blank=False, verbose_name='Description',
                                         help_text='Provide detailed description')
-    description_po = models.TextField(null=False, blank=True)
     price_estimated_local = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
-                                        verbose_name='Price',
-                                        help_text='Price of one unit in PR currency',)
+                                        verbose_name='Price', help_text='Price of one unit in PR currency',)
     price_estimated_usd = USDCurrencyField(verbose_name='Price USD', help_text='Price of one unit in US Dollars')
     price_estimated_local_subtotal = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
-                                        verbose_name='Price Subtotal',
-                                        default=Decimal('0.00'),)
+                                        verbose_name='Price Subtotal', default=Decimal('0.00'),)
     price_estimated_usd_subtotal = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
                                         verbose_name='Price estimated in US Dollars Subtotal',)
     default_finance_codes = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return u'%s' % (self.description_pr)
+        return u'%s' % (self.description)
 
     def __str__(self):
-        return '%s' % (self.description_pr)
+        return '%s' % (self.description)
 
     def save(self, *args, **kwargs):
-        if not self.description_po and self.description_pr:
-            self.description_po = self.description_pr
-        self.price_estimated_local_subtotal = round(self.price_estimated_local * self.quantity_requested,2)
+        self.price_estimated_local_subtotal = round(self.price_estimated_local * self.quantity,2)
         self.price_estimated_usd = round(self.price_estimated_local / self.purchase_request.dollar_exchange_rate, 2)
-        self.price_estimated_usd_subtotal = round(self.price_estimated_usd * self.quantity_requested, 2)
+        self.price_estimated_usd_subtotal = round(self.price_estimated_usd * self.quantity, 2)
 
         if not self.id:
             # increase the item serial number by one for the current Purchase Request
@@ -428,6 +427,7 @@ class Item(CommonBaseAbstractModel):
 
     @property
     def allocation_percent_total(self):
+        """ Returns the total allocation percent for an item to see if it adds up to 100% or not """
         total = self.finance_codes.all().aggregate(Sum('allocation_percent'))['allocation_percent__sum']
         return total
 
@@ -477,34 +477,42 @@ class FinanceCodes(CommonBaseAbstractModel):
         return reverse_lazy('pr_view', kwargs={'pk': self.item.purchase_request.pk})
 
 
-class QuotationAnalysis(CommonBaseAbstractModel):
-    analysis_date = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
-    delivery_date = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
-    selected_vendor = models.ForeignKey(Vendor, null=True, blank=True, related_name='qutoation_analyses')
-    justification = models.TextField(null=True, blank=True)
-    notes = models.TextField(null=True, blank=True)
-
-
 class RequestForQuotation(CommonBaseAbstractModel):
-    purchase_request = models.ForeignKey(PurchaseRequest, related_name='rfqs', on_delete=models.CASCADE)
-    vendor = models.ForeignKey(Vendor, related_name='rfqs', on_delete=models.SET_NULL, null=True, blank=True)
-    date_submitted_to_vendor = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
-    date_received_from_vendor = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
+    purchase_request = models.ForeignKey(PurchaseRequest, related_name='rfqs', on_delete=models.CASCADE,
+                                        help_text="THe Purchase Request for which quotes are collected")
+    vendor = models.ForeignKey(Vendor, related_name='rfqs', on_delete=models.SET_NULL, null=True, blank=True,
+                                        help_text="The vendor providing a quote")
+    date_submitted_to_vendor = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False,
+                                        help_text="The date RfQ was submitted to vendor")
+    date_received_from_vendor = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False,
+                                        help_text="The date quote was received from the vendor in response to RfQ")
     insurance = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
-                                        default=Decimal('0.00'),)
+                                        default=Decimal('0.00'),
+                                        help_text="The amount charged for insurance",)
     shipping_and_handling = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
                                         default=Decimal('0.00'),)
     vat = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
-                                        default=Decimal('0.00'),)
-    meets_specs = models.BooleanField(default=False)
-    meets_compliance = models.BooleanField(default=False)
-    complete_order_delivery_date = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
-    complete_order_payment_terms = models.CharField(max_length=255, null=True, blank=True)
+                                        default=Decimal('0.00'),
+                                        help_text="Local Taxes")
+    meets_specs = models.BooleanField(default=False, help_text="Does the vendr quoted products specs meet the required specs?")
+    meets_compliance = models.BooleanField(default=False,
+                                        help_text="Does the vendor meet Donor/Government/MercyCorps compliance regulations?")
+    complete_order_delivery_date = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False,
+                                        help_text="The date by which the entire order will be delivered by")
+    complete_order_payment_terms = models.TextField(null=True, blank=True,
+                                        help_text="Final Payment Terms for the entire order")
     notes = models.TextField(blank=True, null=True)
-    quotation_analysis = models.ForeignKey(QuotationAnalysis, related_name='rfqs', null=True, blank=True)
+    selected = models.BooleanField(blank=False, null=False, default=False, help_text="The selected vendor")
+    justification = models.TextField(null=True, blank=True, help_text="Why is this vendor selected to fullfill the order?")
+    approved_by_procurement = models.ForeignKey(UserProfile, blank=True, null=True, related_name='rfqs_approved_by_procurement', on_delete=models.SET_NULL)
+    approved_by_procurement_date = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
+    approved_by_program = models.ForeignKey(UserProfile, blank=True, null=True, related_name='rfqs_approved_by_program', on_delete=models.SET_NULL)
+    approved_by_program_date = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
+    approved_by_management = models.ForeignKey(UserProfile, blank=True, null=True, related_name='rfqs_approved_by_management', on_delete=models.SET_NULL)
+    approved_by_management_date = models.DateField(null=True, blank=True, auto_now=False, auto_now_add=False)
 
     def save(self, *args, **kwargs):
         self.complete_order_delivery_date = self.rfq_items.aggregate(Max('delivery_date'))
@@ -512,8 +520,8 @@ class RequestForQuotation(CommonBaseAbstractModel):
 
 
 class RequestForQuotationItem(CommonBaseAbstractModel):
-    request_for_quotation = models.ForeignKey(RequestForQuotation, related_name='rfq_items')
-    item = models.ForeignKey(Item, related_name='request_for_quotation_items')
+    rfq = models.ForeignKey(RequestForQuotation, related_name='rfq_items')
+    item = models.ForeignKey(Item, related_name='rfq_items')
     quoted_price_local_currency = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
                                         default=Decimal('0.00'),)
@@ -530,31 +538,29 @@ class RequestForQuotationItem(CommonBaseAbstractModel):
 
 class PurchaseOrder(CommonBaseAbstractModel):
     purchase_request = models.ForeignKey(PurchaseRequest,
-                                            related_name='purchase_orders',
-                                            on_delete=models.CASCADE)
+                                        related_name='purchase_orders', on_delete=models.CASCADE)
     country = models.ForeignKey(Country, related_name='purchase_orders', on_delete=models.CASCADE)
     office = models.ForeignKey(Office, related_name='purchase_orders', on_delete=models.DO_NOTHING)
-    currency = models.ForeignKey(Currency, related_name='purchase_orders',
-                                    on_delete=models.SET_NULL, null=True, blank=True)
-    po_issued_date = models.DateField(auto_now=False, auto_now_add=False, null=True, blank=True)
-    vendor = models.ForeignKey(Vendor, related_name='purchase_orders', on_delete=models.DO_NOTHING, null=True, blank=True)
-    expected_delivery_date = models.DateField(auto_now=False, auto_now_add=False, null=True, blank=True)
-    #https://docs.djangoproject.com/en/1.8/topics/db/models/#extra-fields-on-many-to-many-relationships
-    items = models.ManyToManyField(Item, through='PurchaseOrderItem')
+    currency = models.ForeignKey(Currency, related_name='purchase_orders', on_delete=models.SET_NULL, null=True, blank=True)
+    issue_date = models.DateField(auto_now=False, auto_now_add=False, null=True, blank=True,
+                                        help_text="The date PO was issued to vendor")
+    vendor = models.ForeignKey(Vendor, related_name='purchase_orders', on_delete=models.DO_NOTHING, null=True, blank=True,
+                                        help_text="The vendor that receives the Purhcase Order")
+    delivery_date = models.DateField(auto_now=False, auto_now_add=False, null=True, blank=True,
+                                        help_text="The agreed-upon date that the vendor will deliver")
     notes = models.TextField(null=False, blank=True)
     total_local = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
                                         verbose_name='Total price in PR currency ',
                                         default=Decimal('0.00'),)
     total_usd = USDCurrencyField(verbose_name='Total USD', help_text='Total Price in US Dollars')
-    quotation_analysis = models.ForeignKey(QuotationAnalysis, related_name='purchase_orders', null=True, blank=True)
 
     def save(self, *args, **kwargs):
         self.total_local = self.purchase_order_items.Aggregate(Sum(price_subtotal_local))
         self.total_usd = self.purchase_order_items.Aggregate(Sum(price_subtotal_usd))
         if self.quotation_analysis:
             self.vendor = self.quotation_analysis.selected_vendor
-            self.expected_delivery_date = self.quotation_analysis.delivery_date
+            self.delivery_date = self.quotation_analysis.delivery_date
         super(PurchaseOrder, self).save(*args, **kwargs)
 
     class Meta:
@@ -567,8 +573,11 @@ class PurchaseOrderItem(CommonBaseAbstractModel):
     A through table for the m2m relationship b/w PurchaseOrder and Item with additional fields.
     """
     purchase_order = models.ForeignKey(PurchaseOrder, related_name='purchase_order_items')
-    item = models.ForeignKey(Item, related_name='purchase_order_items')
-    quantity_ordered = models.PositiveIntegerField(validators=[MinValueValidator(0.0)],null=False, blank=False)
+    pr_item = models.ForeignKey(Item, null=True, blank=True, related_name='po_items', on_delete=models.CASCADE)
+    unit = models.ForeignKey(Unit, related_name='unit', null=True, blank=True, on_delete=models.DO_NOTHING)
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(0.0)],null=False, blank=False)
+    description = models.TextField(null=False, blank=True, verbose_name="Description",
+                                                help_text='Provide detailed description')
     price_local = models.DecimalField(max_digits=10, decimal_places=2,
                                         validators=[MinValueValidator(0.0)],
                                         verbose_name='Price in PR currency',
@@ -582,6 +591,12 @@ class PurchaseOrderItem(CommonBaseAbstractModel):
                                         default=Decimal('0.00'),)
     price_subtotal_usd = USDCurrencyField(verbose_name='Subtal US Dollars')
 
+    def __unicode__(self):
+        return u'%s' % (self.description)
+
+    def __str__(self):
+        return '%s' % (self.description)
+
     def save(self, *args, **kwargs):
         self.price_subtotal_local = self.price_local * self.quantity_ordered
         self.price_subtotal_usd = self.price_usd * self.quantity_ordered
@@ -589,14 +604,11 @@ class PurchaseOrderItem(CommonBaseAbstractModel):
 
 
 class GoodsReceivedNote(CommonBaseAbstractModel):
-    purchase_request = models.ForeignKey(PurchaseRequest,
-                                            related_name='goods_received_notes',
-                                            on_delete=models.CASCADE)
-    po_number = models.PositiveIntegerField(validators=[MinValueValidator(0.0)],)
+    purchase_request = models.ForeignKey(PurchaseRequest, related_name='grns', on_delete=models.CASCADE)
+    purchase_order = models.ForeignKey(PurchaseOrder, related_name='grns', on_delete=models.CASCADE)
     country = models.ForeignKey(Country, related_name='goods_received_notes', on_delete=models.CASCADE)
     office = models.ForeignKey(Office, related_name='goods_received_notes', on_delete=models.DO_NOTHING)
     received_date = models.DateField(auto_now=False, auto_now_add=False, null=True, blank=True)
-    items = models.ManyToManyField(Item, through='GoodsReceivedNoteItem')
 
     class Meta:
         verbose_name = 'Goods Received Note'
@@ -607,11 +619,13 @@ class GoodsReceivedNoteItem(CommonBaseAbstractModel):
     """
     A through table fro the m2m relationship b/w GoodsReceivedNote and Item with extra field
     """
-    goods_received_note = models.ForeignKey(GoodsReceivedNote,
-                                            related_name='goods_received_note_items',
-                                            on_delete=models.CASCADE)
-    item = models.ForeignKey(Item, related_name='goods_received_note_items', on_delete=models.CASCADE)
+    grn = models.ForeignKey(GoodsReceivedNote, related_name='grn_items', on_delete=models.CASCADE)
+    item = models.ForeignKey(Item, related_name='grn_items', on_delete=models.CASCADE)
     quantity_received = models.PositiveIntegerField(validators=[MinValueValidator(0.0)],)
+
+    class Meta:
+        verbose_name = "GRN Item"
+        ordering = ["item"]
 
 
 class PurchaseRecord(CommonBaseAbstractModel):

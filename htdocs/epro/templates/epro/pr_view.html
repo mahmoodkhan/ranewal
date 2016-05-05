@@ -144,7 +144,7 @@
                         <td><a tabindex="0" role="button" class="items_without_finance_codes" data-title="No Finance Codes" data-toggle="popover" data-trigger="focus" data-content="Missing Finance Codes."><span class="glyphicon glyphicon-exclamation-sign" style="color:red;"></span></a></td>
                     {% endif %}
                     <td>{{ item.item_sno }}</td>
-                    <td> {{ item.quantity_requested }} </td>
+                    <td> {{ item.quantity }} </td>
                     <td> {{ item.unit }} </td>
                     <td> 
                         {% if item.attachments.exists %}
@@ -164,7 +164,7 @@
                                 </table>
                             </div>
                         {% endif %}
-                        {{ item.description_pr|urlizetrunc:15|url_target_blank|safe }}
+                        {{ item.description|urlizetrunc:25|url_target_blank|safe }}
                     </td>
                     <td> {{ item.price_estimated_local }} </td>
                     <td> {{ item.price_estimated_local_subtotal }} </td>

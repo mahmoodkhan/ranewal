@@ -44,7 +44,9 @@
                         <tr>
                             <td><a href="{{ MEDIA_URL }}{{ attachment.file}}" target="_blank">{{ attachment.file|filename }}</a></td>
                             <td>{{ attachment.file_size|humanize_bytes }}</td>
-                            <td width="5px"><a href="#" data-target="#confirm-delete" style="color:red;"><span class="glyphicon glyphicon-trash"></span></a></td>
+                            <td width="5px">
+                                <a href="#" data-item-attachment-id={{ attachment.pk }} data-href="{% url 'item_attachment_del' attachment.pk %}" data-toggle="modal" data-target="#confirm-delete" class="del" style="color:red;"><span class="glyphicon glyphicon-trash"></span></a>
+                            </td>
                         <tr>
                         {% endfor %}
                     </table>
@@ -105,7 +107,7 @@
                                 <td>{{ fc.allocation_percent }}</td>
                                 <td>
                                     <a href="{% url 'financecodes_edit' fc.pk %}" data-finance-codes-id={{ fc.pk }} class="edit"><span class="glyphicon glyphicon-edit"></span></a>
-                                    <a href="#" data-finance-codes-id={{ fc.pk }} data-href="{% url 'financecodes_del' fc.pk %}" data-toggle="modal" data-target="#confirm-delete" lass="del" style="color:red;"><span class="glyphicon glyphicon-trash"></span></a>
+                                    <a href="#" data-finance-codes-id={{ fc.pk }} data-href="{% url 'financecodes_del' fc.pk %}" data-toggle="modal" data-target="#confirm-delete" class="del" style="color:red;"><span class="glyphicon glyphicon-trash"></span></a>
                                 </td>
                             </tr>
                         {% endfor %}

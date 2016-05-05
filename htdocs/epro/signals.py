@@ -17,4 +17,7 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
         if os.path.isfile(instance.file.path):
             os.remove(instance.file.path)
 
-
+# Any time a PR item is created.
+# 1. Check if PO Item exists.
+# 2. If it exists,
+# 3. if it does NOT exists then create it

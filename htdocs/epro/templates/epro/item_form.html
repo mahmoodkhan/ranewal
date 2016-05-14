@@ -241,7 +241,7 @@
         $("#financecodes_form_collapse_div").collapse('hide');
     });
 
-
+    var attachment_form_url = $("form#id_attachment_form").attr("action");
     // Submit ItemForm via AJAX for adding and editing ITEMS of a PR.
     $('#pr_items_modal_div').on('submit', '#id_pr_item_form', function(e) {
         e.preventDefault();
@@ -262,6 +262,11 @@
                 // Update the item_form action URL so that clicking the SAVE button again does not create duplicate items.
                 var url = "{% url 'item_edit' 0 %}";
                 url = url.replace("0", item["id"]);
+                // update the url for the attachment form as well.
+                attachment_form_url = attachment_form_url.replace("0", item["id"]);
+                $("form#id_attachment_form").attr("action", attachment_form_url);
+                $("form#id_attachment_form #id_item").attr("value", item["id"]);
+
                 $("#id_pr_item_form").attr("action", url);
                 $("#id_pr_item_form").data("item_id", item["id"]);
             
@@ -285,12 +290,17 @@
         //autoProcessQueue : false, // prevents from uploading dropped files immediately.
         parallelUploads: 2,
         maxFilesize: 2, // MB
+        init: function() {
+            this.on("processing", function(file) {
+                this.options.url = attachment_form_url;
+            });
+        },
         
     });
-    
+
     myDropzone.on("success", function(file) {
-        console.log("replace this line by adding the uploaded file the table above");
-        console.log(file);
+        //console.log("replace this line by adding the uploaded file the table above");
+        //console.log(file);
         file.previewElement.addEventListener("click", function() {
             myDropzone.removeFile(file);
         });

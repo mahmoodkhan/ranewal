@@ -206,18 +206,6 @@ class ActivityCode(CommonBaseAbstractModel):
 
 
 class PurchaseRequestStatus(CommonBaseAbstractModel):
-    """ A PR goes through these statuses.
-    STATUS_DRAFT = 'drafted'
-    STATUS_PENDING_PROCUREMENT_VERIFICATION = 'Procurement Verified'
-    STATUS_PENDING_APPROVAL = 'Approved'
-    STATUS_PENDING_APPROVAL = 'Approved II'
-    STATUS_PENDING_FINANCIAL_REVIEW = 'Finance Reviewed'
-    STATUS_ONGOING = 'Open'
-    STATUS_COMPLETED = 'completed'
-    STATUS_ONHOLD = 'onhold'
-    STATUS_CANCELED = 'canceled'
-    STATUS_REJECTED = 'rejected'
-    """
     status = models.CharField(max_length=50, null=False, blank=False)
 
     def __unicode__(self):
@@ -450,7 +438,7 @@ class ItemAttachment(CommonBaseAbstractModel):
         ordering = ["item",]
 
     def get_absolute_url(self):
-        return reverse_lazy('item_attachment', kwargs={'pk': self.item.purchase_request.pk})
+        return reverse_lazy('item_attachment_new', kwargs={'pk': self.item.purchase_request.pk})
 
 
 class FinanceCodes(CommonBaseAbstractModel):
